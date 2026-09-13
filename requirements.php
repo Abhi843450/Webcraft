@@ -324,7 +324,15 @@ textarea.form-control{resize:vertical;min-height:80px;}
 <div class="top-bar">
     <div class="container d-flex align-items-center justify-content-between">
         <span class="brand">WebCraft Studio</span>
-        <span class="text-muted small">Step <span id="stepCounter">1</span> of 10</span>
+        <div class="d-flex align-items-center gap-3">
+            <span id="autoSaveIndicator" class="badge bg-success d-none" style="font-size:10px;padding:4px 8px;">
+                <i class="bi bi-check-circle"></i> Auto-save ON
+            </span>
+            <button type="button" id="startAgainBtn" class="btn btn-sm btn-outline-light d-none" onclick="startAgain()" style="font-size:11px;padding:2px 10px;border-radius:4px;">
+                <i class="bi bi-arrow-counterclockwise"></i> Start Again
+            </button>
+            <span class="text-muted small">Step <span id="stepCounter">1</span> of 10</span>
+        </div>
     </div>
 </div>
 
@@ -1937,6 +1945,20 @@ function toggleMobilePrice() {
 const AUTOSAVE_KEY = 'webcraft_draft';
 let autoSaveTimer = null;
 
+function showAutoSaveIndicator() {
+    const badge = document.getElementById('autoSaveIndicator');
+    const btn = document.getElementById('startAgainBtn');
+    if (badge) badge.classList.remove('d-none');
+    if (btn) btn.classList.remove('d-none');
+}
+
+function hideAutoSaveIndicator() {
+    const badge = document.getElementById('autoSaveIndicator');
+    const btn = document.getElementById('startAgainBtn');
+    if (badge) badge.classList.add('d-none');
+    if (btn) btn.classList.add('d-none');
+}
+
 function autoSave() {
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
@@ -1967,16 +1989,19 @@ function autoSave() {
         data._checked = checked;
         data._step = currentStep;
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+        showAutoSaveIndicator();
     }, 500);
 }
 
 function restoreAutoSave() {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
-    if (!saved) return;
+    if (!saved) return false;
     try {
         const data = JSON.parse(saved);
         const form = document.getElementById('requirementForm');
-        if (!form) return;
+        if (!form) return false;
+
+        let hasData = false;
 
         Object.keys(data).forEach(key => {
             if (key.startsWith('_')) return;
@@ -1984,18 +2009,18 @@ function restoreAutoSave() {
             if (Array.isArray(val)) {
                 val.forEach(v => {
                     const el = form.querySelector(`[name="${key}[]"][value="${v}"]`);
-                    if (el) el.checked = true;
+                    if (el) { el.checked = true; hasData = true; }
                 });
             } else {
                 const el = form.querySelector(`[name="${key}"]`);
                 if (el) {
                     if (el.type === 'radio') {
                         const radio = form.querySelector(`[name="${key}"][value="${val}"]`);
-                        if (radio) radio.checked = true;
+                        if (radio) { radio.checked = true; hasData = true; }
                     } else if (el.tagName === 'SELECT') {
-                        el.value = val;
+                        el.value = val; hasData = true;
                     } else {
-                        el.value = val;
+                        el.value = val; hasData = true;
                     }
                 }
             }
@@ -2007,11 +2032,11 @@ function restoreAutoSave() {
                 if (Array.isArray(vals)) {
                     vals.forEach(v => {
                         const el = form.querySelector(`[name="${key}[]"][value="${v}"]`);
-                        if (el) el.checked = true;
+                        if (el) { el.checked = true; hasData = true; }
                     });
                 } else {
                     const el = form.querySelector(`[name="${key}"][value="${vals}"]`);
-                    if (el) el.checked = true;
+                    if (el) { el.checked = true; hasData = true; }
                 }
             });
         }
@@ -2023,11 +2048,32 @@ function restoreAutoSave() {
 
         handleConditionalSections();
         setTimeout(calculatePrice, 200);
+
+        if (hasData) {
+            showAutoSaveIndicator();
+            return true;
+        }
     } catch(e) {}
+    return false;
 }
 
 function clearAutoSave() {
     localStorage.removeItem(AUTOSAVE_KEY);
+    hideAutoSaveIndicator();
+}
+
+function startAgain() {
+    if (!confirm('This will clear all your filled data and start fresh. Continue?')) return;
+    clearAutoSave();
+    const form = document.getElementById('requirementForm');
+    if (form) form.reset();
+    currentStep = 1;
+    showStep(1);
+    handleConditionalSections();
+    document.getElementById('price_total').textContent = 'NPR 0';
+    document.getElementById('floatingPriceText').textContent = 'NPR 0';
+    const bd = document.getElementById('priceBreakdown');
+    if (bd) bd.innerHTML = '<p class="text-muted small" style="margin:0;">Select options to see pricing</p>';
 }
 
 document.getElementById('requirementForm').addEventListener('input', autoSave);
