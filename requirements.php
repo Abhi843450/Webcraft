@@ -245,9 +245,9 @@ body>.progress-container{flex:0 0 auto;}
 .step-item.active .step-label{color:var(--primary);font-weight:600;}
 .step-item.completed .step-label{color:var(--success);}
 .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:20px;}
-.form-step{display:none;animation:fadeIn .25s ease;}
-.form-step.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.form-step{display:none;}
+.form-step.active{display:block;animation:slideUp .35s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 .step-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
 .step-subtitle{font-size:13px;color:var(--text-muted);margin-bottom:24px;}
 .form-label{display:block;font-weight:600;font-size:13px;color:var(--text);margin-bottom:6px;}
@@ -293,8 +293,8 @@ textarea.form-control{resize:vertical;min-height:80px;}
 .price-total .label{font-weight:700;font-size:14px;}
 .price-total .value{font-weight:700;font-size:18px;color:var(--primary);}
 .price-note{font-size:11px;color:var(--text-muted);text-align:center;margin:10px 0 0;}
-.conditional-section{display:none;}
-.conditional-section.visible{display:block;animation:fadeIn .2s ease;}
+.conditional-section{overflow:hidden;max-height:0;opacity:0;transition:max-height .4s cubic-bezier(.4,0,.2,1),opacity .3s ease,padding .3s ease;}
+.conditional-section.visible{max-height:800px;opacity:1;}
 .review-section{background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
 .review-section h6{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin:0 0 8px;font-weight:600;}
 .review-item{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid #f1f5f9;}
@@ -1899,6 +1899,7 @@ document.getElementById('requirementForm').addEventListener('submit', function(e
     .then(res => res.json())
     .then(data => {
         if (data.success) {
+            clearAutoSave();
             document.body.innerHTML = `
                 <div class="d-flex align-items-center justify-content-center" style="min-height:100vh;background:#f0f2f5;">
                     <div class="text-center p-5 bg-white rounded-4 shadow" style="max-width:500px;">
@@ -1932,8 +1933,114 @@ function toggleMobilePrice() {
     overlay.classList.toggle('active');
 }
 
+// === AUTO-SAVE TO LOCALSTORAGE ===
+const AUTOSAVE_KEY = 'webcraft_draft';
+let autoSaveTimer = null;
+
+function autoSave() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        const form = document.getElementById('requirementForm');
+        if (!form) return;
+        const data = {};
+        new FormData(form).forEach((v, k) => {
+            if (k.endsWith('[]')) {
+                const key = k.slice(0, -2);
+                if (!data[key]) data[key] = [];
+                data[key].push(v);
+            } else {
+                data[key] = v;
+            }
+        });
+        const checked = {};
+        form.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked').forEach(el => {
+            if (el.name) {
+                if (el.name.endsWith('[]')) {
+                    const key = el.name.slice(0, -2);
+                    if (!checked[key]) checked[key] = [];
+                    checked[key].push(el.value);
+                } else {
+                    checked[el.name] = el.value;
+                }
+            }
+        });
+        data._checked = checked;
+        data._step = currentStep;
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+    }, 500);
+}
+
+function restoreAutoSave() {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (!saved) return;
+    try {
+        const data = JSON.parse(saved);
+        const form = document.getElementById('requirementForm');
+        if (!form) return;
+
+        Object.keys(data).forEach(key => {
+            if (key.startsWith('_')) return;
+            const val = data[key];
+            if (Array.isArray(val)) {
+                val.forEach(v => {
+                    const el = form.querySelector(`[name="${key}[]"][value="${v}"]`);
+                    if (el) el.checked = true;
+                });
+            } else {
+                const el = form.querySelector(`[name="${key}"]`);
+                if (el) {
+                    if (el.type === 'radio') {
+                        const radio = form.querySelector(`[name="${key}"][value="${val}"]`);
+                        if (radio) radio.checked = true;
+                    } else if (el.tagName === 'SELECT') {
+                        el.value = val;
+                    } else {
+                        el.value = val;
+                    }
+                }
+            }
+        });
+
+        if (data._checked) {
+            Object.keys(data._checked).forEach(key => {
+                const vals = data._checked[key];
+                if (Array.isArray(vals)) {
+                    vals.forEach(v => {
+                        const el = form.querySelector(`[name="${key}[]"][value="${v}"]`);
+                        if (el) el.checked = true;
+                    });
+                } else {
+                    const el = form.querySelector(`[name="${key}"][value="${vals}"]`);
+                    if (el) el.checked = true;
+                }
+            });
+        }
+
+        if (data._step) {
+            currentStep = parseInt(data._step);
+            showStep(currentStep);
+        }
+
+        handleConditionalSections();
+        setTimeout(calculatePrice, 200);
+    } catch(e) {}
+}
+
+function clearAutoSave() {
+    localStorage.removeItem(AUTOSAVE_KEY);
+}
+
+document.getElementById('requirementForm').addEventListener('input', autoSave);
+document.getElementById('requirementForm').addEventListener('change', autoSave);
+
+// === KEEP-ALIVE PING ===
+setInterval(() => {
+    fetch('<?= BASE_URL ?>/api/ping.php').catch(() => {});
+}, 300000);
+
 document.addEventListener('DOMContentLoaded', function() {
     handleConditionalSections();
+    restoreAutoSave();
 });
 </script>
 </body>
