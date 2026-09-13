@@ -3,7 +3,14 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/functions.php';
 
 $input = json_decode(file_get_contents('php://input'), true);
-if (!$input) $input = $_POST;
+if (!$input) $input = $_REQUEST;
+if (isset($input['features']) && !is_array($input['features'])) {
+    // Handle features[] from URL params
+    $input['features'] = $_GET['features'] ?? [];
+}
+if (isset($input['communication_features']) && !is_array($input['communication_features'])) {
+    $input['communication_features'] = $_GET['communication_features'] ?? [];
+}
 
 $websiteTypeId = intval($input['website_type_id'] ?? 0);
 $features = $input['features'] ?? [];

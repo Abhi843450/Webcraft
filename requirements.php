@@ -1584,9 +1584,34 @@ let priceTimer = null;
 function calculatePrice() {
     clearTimeout(priceTimer);
     priceTimer = setTimeout(() => {
-        const formData = new FormData(document.getElementById('requirementForm'));
-        const params = new URLSearchParams(formData).toString();
-        fetch('<?= BASE_URL ?>/api/calculate-price.php?' + params)
+        const form = document.getElementById('requirementForm');
+        const data = {};
+        new FormData(form).forEach((v, k) => {
+            if (k.endsWith('[]')) {
+                if (!data[k]) data[k] = [];
+                data[k].push(v);
+            } else {
+                data[k] = v;
+            }
+        });
+        const checked = {};
+        form.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked').forEach(el => {
+            if (el.name) {
+                if (el.name.endsWith('[]')) {
+                    if (!checked[el.name]) checked[el.name] = [];
+                    checked[el.name].push(el.value);
+                } else {
+                    checked[el.name] = el.value;
+                }
+            }
+        });
+        Object.assign(data, checked);
+
+        fetch('<?= BASE_URL ?>/api/calculate-price.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
             .then(res => res.json())
             .then(data => {
                 if (!data.success) return;
@@ -1898,11 +1923,34 @@ document.getElementById('requirementForm').addEventListener('submit', function(e
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Submitting...';
 
-    const formData = new FormData(this);
+    const form = this;
+    const data = {};
+    new FormData(form).forEach((v, k) => {
+        if (k.endsWith('[]')) {
+            if (!data[k]) data[k] = [];
+            data[k].push(v);
+        } else {
+            data[k] = v;
+        }
+    });
+    const checked = {};
+    form.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked').forEach(el => {
+        if (el.name) {
+            if (el.name.endsWith('[]')) {
+                const key = el.name;
+                if (!checked[key]) checked[key] = [];
+                checked[key].push(el.value);
+            } else {
+                checked[el.name] = el.value;
+            }
+        }
+    });
+    Object.assign(data, checked);
 
     fetch(this.action, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     })
     .then(res => res.json())
     .then(data => {
@@ -1911,7 +1959,7 @@ document.getElementById('requirementForm').addEventListener('submit', function(e
             document.body.innerHTML = `
                 <div class="d-flex align-items-center justify-content-center" style="min-height:100vh;background:#f0f2f5;">
                     <div class="text-center p-5 bg-white rounded-4 shadow" style="max-width:500px;">
-                        <div style="width:80px;height:80px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
+                        <div style="width:80px;height:80px;background:#d1faee;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
                             <i class="bi bi-check-lg" style="font-size:2.5rem;color:#059669;"></i>
                         </div>
                         <h2 class="fw-bold mb-2">Requirements Submitted!</h2>
@@ -1927,7 +1975,8 @@ document.getElementById('requirementForm').addEventListener('submit', function(e
             btn.innerHTML = '<i class="bi bi-send"></i> Submit Requirements';
         }
     })
-    .catch(() => {
+    .catch(err => {
+        console.error('Submit error:', err);
         alert('An error occurred. Please try again.');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-send"></i> Submit Requirements';

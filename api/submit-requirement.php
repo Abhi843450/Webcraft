@@ -6,19 +6,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Support both form-encoded and JSON submissions
-$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-if (stripos($contentType, 'application/json') !== false) {
-    $data = json_decode(file_get_contents('php://input'), true);
-    if (!$data) $data = $_POST;
+$jsonInput = file_get_contents('php://input');
+$parsedJson = json_decode($jsonInput, true);
+$isJson = is_array($parsedJson) && !empty($parsedJson);
+if ($isJson) {
+    $data = $parsedJson;
 } else {
     verifyCsrf();
     $data = $_POST;
+}
+
+function jsonResponse($success, $message = '', $extra = []) {
+    header('Content-Type: application/json');
+    echo json_encode(array_merge(['success' => $success, 'message' => $message], $extra));
+    exit;
 }
 
 // Validate required fields
 $required = ['customer_name', 'customer_email', 'website_type_id'];
 foreach ($required as $field) {
     if (empty($data[$field])) {
+        if ($isJson) { jsonResponse(false, 'Please fill in all required fields.'); }
         flash('error', 'Please fill in all required fields.');
         header('Location: ' . BASE_URL . '/requirements.php?step=' . ($_POST['current_step'] ?? 1));
         exit;
@@ -26,6 +34,7 @@ foreach ($required as $field) {
 }
 
 if (!filter_var($data['customer_email'], FILTER_VALIDATE_EMAIL)) {
+    if ($isJson) { jsonResponse(false, 'Please enter a valid email address.'); }
     flash('error', 'Please enter a valid email address.');
     header('Location: ' . BASE_URL . '/requirements.php?step=' . ($_POST['current_step'] ?? 1));
     exit;
@@ -233,6 +242,14 @@ $_SESSION['submitted_requirement'] = [
     'type' => $websiteType['name'] ?? 'Website',
     'timeline' => TIMELINE_OPTIONS[$data['timeline'] ?? 'no_deadline'] ?? 'Flexible'
 ];
+
+if ($isJson) {
+    jsonResponse(true, '', [
+        'requirement_id' => $requirementId,
+        'estimate' => $totalEstimate,
+        'redirect' => BASE_URL . '/thank-you.php'
+    ]);
+}
 
 header('Location: ' . BASE_URL . '/thank-you.php');
 exit;
