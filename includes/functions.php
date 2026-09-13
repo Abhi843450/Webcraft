@@ -4,6 +4,14 @@ session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/config.php';
 
+function isPostgres() {
+    return (bool) getenv('DB_HOST');
+}
+
+function dateSub($interval) {
+    return isPostgres() ? "NOW() - INTERVAL '{$interval}'" : "DATE_SUB(NOW(), INTERVAL {$interval})";
+}
+
 function isLoggedIn() {
     return isset($_SESSION['admin_id']) && $_SESSION['admin_id'] > 0;
 }
@@ -137,7 +145,11 @@ function getSetting($key) {
 }
 
 function setSetting($key, $value) {
-    db()->query("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?", [$key, $value, $value]);
+    if (isPostgres()) {
+        db()->query("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value", [$key, $value]);
+    } else {
+        db()->query("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?", [$key, $value, $value]);
+    }
 }
 
 function timeAgo($datetime) {

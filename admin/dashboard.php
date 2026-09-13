@@ -11,8 +11,8 @@ $approved = db()->count('requirements', "status = 'approved' AND is_archived = 0
 $rejected = db()->count('requirements', "status = 'rejected' AND is_archived = 0");
 $completed = db()->count('requirements', "status = 'completed' AND is_archived = 0");
 
-$weekReqs = db()->count('requirements', "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND is_archived = 0");
-$monthReqs = db()->count('requirements', "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND is_archived = 0");
+$weekReqs = db()->count('requirements', "created_at >= " . dateSub('7 days') . " AND is_archived = 0");
+$monthReqs = db()->count('requirements', "created_at >= " . dateSub('30 days') . " AND is_archived = 0");
 
 $estRevenue = db()->fetch("SELECT COALESCE(SUM(COALESCE(admin_override_price, system_estimate)), 0) as total FROM requirements WHERE status IN ('approved','converted','completed') AND is_archived = 0");
 $avgValue = db()->fetch("SELECT COALESCE(AVG(COALESCE(admin_override_price, system_estimate)), 0) as avg_val FROM requirements WHERE system_estimate > 0 AND is_archived = 0");
