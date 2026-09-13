@@ -5,20 +5,16 @@ function autoInitDatabase() {
         $db = db();
         
         $host = getenv('DB_HOST');
-        if ($host) {
-            $tables = $db->fetch("SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'requirements'");
-        } else {
-            $tables = $db->fetch("SHOW TABLES LIKE 'requirements'");
+        if (!$host) {
+            return;
         }
         
+        $tables = $db->fetch("SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'requirements'");
         if ($tables) {
             return;
         }
         
-        $sqlFile = $host 
-            ? BASE_PATH . '/database/database-postgres.sql'
-            : BASE_PATH . '/database/database.sql';
-            
+        $sqlFile = BASE_PATH . '/database/database-postgres.sql';
         if (!file_exists($sqlFile)) {
             return;
         }
@@ -28,18 +24,22 @@ function autoInitDatabase() {
         
         $statements = array_filter(array_map('trim', explode(';', $sql)));
         
+        $ok = 0;
+        $fail = 0;
         foreach ($statements as $stmt) {
             $stmt = trim($stmt);
             if (!empty($stmt) && strlen($stmt) > 5) {
                 try {
                     $db->query($stmt);
+                    $ok++;
                 } catch (Exception $e) {
-                    error_log('Init failed: ' . substr($e->getMessage(), 0, 100) . ' | ' . substr($stmt, 0, 60));
+                    $fail++;
+                    error_log('Init err: ' . substr($e->getMessage(), 0, 80));
                 }
             }
         }
         
-        error_log('Database auto-initialized');
+        error_log("DB init: {$ok} ok, {$fail} failed");
     } catch (Exception $e) {
         error_log('DB init failed: ' . $e->getMessage());
     }
