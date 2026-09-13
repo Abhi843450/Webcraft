@@ -1,0 +1,608 @@
+-- Website Requirement & Quotation Builder Database
+-- For XAMPP / MySQL
+
+CREATE DATABASE IF NOT EXISTS `website_requirement_builder` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `website_requirement_builder`;
+
+-- =====================================================
+-- ADMIN USERS & ROLES
+-- =====================================================
+
+CREATE TABLE `admin_roles` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(50) NOT NULL,
+    `slug` VARCHAR(50) NOT NULL UNIQUE,
+    `permissions` JSON,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `admin_roles` (`name`, `slug`, `permissions`) VALUES
+('Super Admin', 'super-admin', '{"all": true}'),
+('Admin', 'admin', '{"requirements": true, "quotations": true, "pricing": true, "reports": true}'),
+('Sales Manager', 'sales-manager', '{"requirements": true, "quotations": true}'),
+('Support', 'support', '{"requirements": "view"}');
+
+CREATE TABLE `admins` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `role_id` INT UNSIGNED NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `email` VARCHAR(150) NOT NULL UNIQUE,
+    `username` VARCHAR(50) NOT NULL UNIQUE,
+    `password` VARCHAR(255) NOT NULL,
+    `phone` VARCHAR(20),
+    `avatar` VARCHAR(255),
+    `is_active` TINYINT(1) DEFAULT 1,
+    `last_login` TIMESTAMP NULL,
+    `login_attempts` INT DEFAULT 0,
+    `locked_until` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`role_id`) REFERENCES `admin_roles`(`id`)
+) ENGINE=InnoDB;
+
+-- Default admin: admin@demo.com / password
+INSERT INTO `admins` (`role_id`, `name`, `email`, `username`, `password`) VALUES
+(1, 'Super Admin', 'admin@demo.com', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+
+-- =====================================================
+-- WEBSITE TYPES
+-- =====================================================
+
+CREATE TABLE `website_types` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL,
+    `slug` VARCHAR(100) NOT NULL UNIQUE,
+    `description` TEXT,
+    `icon` VARCHAR(50),
+    `base_price` DECIMAL(12,2) DEFAULT 0.00,
+    `display_order` INT DEFAULT 0,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `website_types` (`name`, `slug`, `description`, `base_price`, `display_order`) VALUES
+('Basic Website', 'basic', 'Informational website with static pages', 20000.00, 1),
+('Professional Business Website', 'professional-business', 'Business pages, CMS, forms, SEO', 35000.00, 2),
+('Business Website', 'business', 'Standard business website', 30000.00, 3),
+('E-commerce Website', 'ecommerce', 'Products, cart, checkout, payments', 45000.00, 4),
+('Booking Website', 'booking', 'Appointments, reservations, availability', 40000.00, 5),
+('Membership Website', 'membership', 'Registration, login, profiles, member content', 40000.00, 6),
+('Educational Website', 'educational', 'Courses, students, teachers, admissions', 45000.00, 7),
+('News / Blog Website', 'news-blog', 'Articles, categories, authors, comments', 30000.00, 8),
+('Directory Website', 'directory', 'Listings, search, filters', 35000.00, 9),
+('Marketplace', 'marketplace', 'Multiple sellers, products/services', 60000.00, 10),
+('Portal', 'portal', 'User-specific dashboards and services', 50000.00, 11),
+('Custom Web Application', 'custom', 'Complex business logic and workflows', 70000.00, 12),
+('Landing Page', 'landing', 'Single page for marketing', 8000.00, 13);
+
+-- =====================================================
+-- FEATURE CATEGORIES & FEATURES
+-- =====================================================
+
+CREATE TABLE `feature_categories` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL,
+    `slug` VARCHAR(100) NOT NULL UNIQUE,
+    `icon` VARCHAR(50),
+    `display_order` INT DEFAULT 0,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `feature_categories` (`name`, `slug`, `display_order`) VALUES
+('Core', 'core', 1),
+('Design', 'design', 2),
+('CMS', 'cms', 3),
+('E-commerce', 'ecommerce', 4),
+('Booking', 'booking', 5),
+('User System', 'user-system', 6),
+('Communication', 'communication', 7),
+('SEO', 'seo', 8),
+('Security', 'security', 9),
+('Integration', 'integration', 10),
+('Content', 'content', 11),
+('Maps & Location', 'maps-location', 12),
+('Analytics', 'analytics', 13),
+('Hosting', 'hosting', 14),
+('Maintenance', 'maintenance', 15);
+
+CREATE TABLE `features` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `category_id` INT UNSIGNED NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
+    `slug` VARCHAR(150) NOT NULL,
+    `description` TEXT,
+    `price` DECIMAL(12,2) DEFAULT 0.00,
+    `pricing_type` ENUM('fixed','per_page','per_product','per_language','per_user_role','percentage','custom') DEFAULT 'fixed',
+    `is_active` TINYINT(1) DEFAULT 1,
+    `display_order` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_feature_slug` (`slug`),
+    FOREIGN KEY (`category_id`) REFERENCES `feature_categories`(`id`)
+) ENGINE=InnoDB;
+
+INSERT INTO `features` (`category_id`, `name`, `slug`, `price`, `pricing_type`, `display_order`) VALUES
+(1, 'Contact Form', 'contact-form', 2000.00, 'fixed', 1),
+(1, 'Advanced Contact System', 'advanced-contact', 5000.00, 'fixed', 2),
+(1, 'Newsletter Subscription', 'newsletter', 3000.00, 'fixed', 3),
+(3, 'CMS / Admin Panel', 'cms', 12000.00, 'fixed', 1),
+(3, 'Blog', 'blog', 7000.00, 'fixed', 2),
+(3, 'News Management', 'news', 8000.00, 'fixed', 3),
+(3, 'Events Management', 'events', 8000.00, 'fixed', 4),
+(3, 'Gallery', 'gallery', 5000.00, 'fixed', 5),
+(3, 'Testimonials', 'testimonials', 3000.00, 'fixed', 6),
+(3, 'FAQ', 'faq', 3000.00, 'fixed', 7),
+(3, 'Downloads', 'downloads', 4000.00, 'fixed', 8),
+(4, 'E-commerce', 'ecommerce', 35000.00, 'fixed', 1),
+(4, 'Product Categories', 'product-categories', 5000.00, 'fixed', 2),
+(4, 'Product Variations', 'product-variations', 8000.00, 'fixed', 3),
+(4, 'Inventory Management', 'inventory', 10000.00, 'fixed', 4),
+(4, 'Shopping Cart', 'shopping-cart', 8000.00, 'fixed', 5),
+(4, 'Wishlist', 'wishlist', 3000.00, 'fixed', 6),
+(4, 'Checkout System', 'checkout', 10000.00, 'fixed', 7),
+(4, 'Order Management', 'order-management', 12000.00, 'fixed', 8),
+(4, 'Coupons & Discounts', 'coupons', 5000.00, 'fixed', 9),
+(4, 'Product Reviews', 'product-reviews', 4000.00, 'fixed', 10),
+(4, 'Shipping System', 'shipping', 8000.00, 'fixed', 11),
+(4, 'Tax Management', 'tax-management', 5000.00, 'fixed', 12),
+(4, 'Invoice Generation', 'invoice', 6000.00, 'fixed', 13),
+(4, 'Refund System', 'refunds', 7000.00, 'fixed', 14),
+(4, 'Order Tracking', 'order-tracking', 5000.00, 'fixed', 15),
+(5, 'Booking System', 'booking-system', 20000.00, 'fixed', 1),
+(5, 'Calendar View', 'calendar', 5000.00, 'fixed', 2),
+(5, 'Availability Management', 'availability', 6000.00, 'fixed', 3),
+(5, 'Time Slots', 'time-slots', 4000.00, 'fixed', 4),
+(5, 'Booking Confirmation', 'booking-confirmation', 3000.00, 'fixed', 5),
+(5, 'Cancellation & Rescheduling', 'cancellation', 4000.00, 'fixed', 6),
+(5, 'Admin Approval', 'booking-approval', 5000.00, 'fixed', 7),
+(6, 'User Registration', 'user-registration', 8000.00, 'fixed', 1),
+(6, 'User Login System', 'user-login', 8000.00, 'fixed', 2),
+(6, 'User Dashboard', 'user-dashboard', 15000.00, 'fixed', 3),
+(6, 'Admin Dashboard', 'admin-dashboard', 15000.00, 'fixed', 4),
+(6, 'Social Login', 'social-login', 8000.00, 'fixed', 5),
+(6, 'Email Verification', 'email-verification', 3000.00, 'fixed', 6),
+(6, 'Phone Verification', 'phone-verification', 5000.00, 'fixed', 7),
+(6, 'Forgot Password', 'forgot-password', 3000.00, 'fixed', 8),
+(6, 'Profile Management', 'profile-management', 5000.00, 'fixed', 9),
+(6, 'Notifications System', 'notifications', 8000.00, 'fixed', 10),
+(6, 'Saved Items / Favorites', 'favorites', 4000.00, 'fixed', 11),
+(7, 'Live Chat', 'live-chat', 8000.00, 'fixed', 1),
+(7, 'WhatsApp Integration', 'whatsapp', 3000.00, 'fixed', 2),
+(7, 'SMS Integration', 'sms-integration', 7000.00, 'fixed', 3),
+(7, 'Push Notifications', 'push-notifications', 8000.00, 'fixed', 4),
+(7, 'Automated Emails', 'automated-emails', 5000.00, 'fixed', 5),
+(8, 'Basic SEO', 'seo-basic', 5000.00, 'fixed', 1),
+(8, 'Standard SEO', 'seo-standard', 10000.00, 'fixed', 2),
+(8, 'Advanced SEO', 'seo-advanced', 15000.00, 'fixed', 3),
+(9, 'SSL/HTTPS', 'ssl', 0.00, 'fixed', 1),
+(9, 'Two-Factor Authentication', '2fa', 5000.00, 'fixed', 2),
+(9, 'CAPTCHA', 'captcha', 2000.00, 'fixed', 3),
+(9, 'Activity Logs', 'activity-logs', 4000.00, 'fixed', 4),
+(9, 'Automatic Backups', 'auto-backups', 5000.00, 'fixed', 5),
+(10, 'Google Maps', 'google-maps', 4000.00, 'fixed', 1),
+(10, 'Social Media Integration', 'social-media', 5000.00, 'fixed', 2),
+(10, 'Custom API Integration', 'api-integration', 10000.00, 'fixed', 3),
+(10, 'CRM Integration', 'crm', 15000.00, 'fixed', 4),
+(10, 'ERP Integration', 'erp', 20000.00, 'fixed', 5),
+(11, 'Content Writing', 'content-writing', 8000.00, 'fixed', 1),
+(11, 'Image Optimization', 'image-optimization', 3000.00, 'fixed', 2),
+(11, 'Video Embedding', 'video-embedding', 3000.00, 'fixed', 3),
+(11, 'Professional Copywriting', 'copywriting', 15000.00, 'fixed', 4),
+(12, 'Google Maps Integration', 'gmaps', 4000.00, 'fixed', 1),
+(12, 'OpenStreetMap', 'openstreetmap', 3000.00, 'fixed', 2),
+(12, 'Location Search', 'location-search', 5000.00, 'fixed', 3),
+(12, 'Nearby Search', 'nearby-search', 6000.00, 'fixed', 4),
+(13, 'Google Analytics', 'google-analytics', 3000.00, 'fixed', 1),
+(13, 'Google Search Console', 'search-console', 2000.00, 'fixed', 2),
+(13, 'Meta Pixel', 'meta-pixel', 3000.00, 'fixed', 3),
+(13, 'Conversion Tracking', 'conversion-tracking', 5000.00, 'fixed', 4),
+(14, 'Domain Setup', 'domain-setup', 0.00, 'fixed', 1),
+(14, 'Hosting Setup', 'hosting-setup', 0.00, 'fixed', 2),
+(14, 'Business Email', 'business-email', 3000.00, 'fixed', 3),
+(15, 'Monthly Maintenance', 'monthly-maintenance', 5000.00, 'fixed', 1),
+(15, 'Security Updates', 'security-updates', 3000.00, 'fixed', 2),
+(15, 'Content Updates', 'content-updates', 4000.00, 'fixed', 3),
+(15, 'Technical Support', 'tech-support', 5000.00, 'fixed', 4);
+
+-- =====================================================
+-- PRICING RULES
+-- =====================================================
+
+CREATE TABLE `pricing_rules` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `feature_id` INT UNSIGNED,
+    `rule_name` VARCHAR(100) NOT NULL,
+    `rule_type` ENUM('base_price','per_page','per_product','per_language','per_user_role','additional_item','conditional','range','custom') NOT NULL,
+    `base_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `unit_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `included_units` INT DEFAULT 0,
+    `min_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `max_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `condition_key` VARCHAR(100),
+    `condition_value` VARCHAR(255),
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`feature_id`) REFERENCES `features`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+INSERT INTO `pricing_rules` (`feature_id`, `rule_name`, `rule_type`, `base_amount`, `unit_amount`, `included_units`) VALUES
+(NULL, 'Additional Pages', 'per_page', 0.00, 800.00, 5),
+(NULL, 'Additional Languages', 'per_language', 0.00, 5000.00, 1),
+(NULL, 'Additional Products', 'per_product', 0.00, 200.00, 0),
+(NULL, 'Additional User Roles', 'per_user_role', 0.00, 3000.00, 2);
+
+-- =====================================================
+-- DYNAMIC QUESTIONS SYSTEM
+-- =====================================================
+
+CREATE TABLE `question_categories` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL,
+    `slug` VARCHAR(100) NOT NULL UNIQUE,
+    `step_number` INT DEFAULT 0,
+    `icon` VARCHAR(50),
+    `description` TEXT,
+    `display_order` INT DEFAULT 0,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `question_categories` (`name`, `slug`, `step_number`, `display_order`) VALUES
+('Project Basics', 'project', 1, 1),
+('Business Information', 'business', 2, 2),
+('Design Requirements', 'design', 3, 3),
+('Website Pages', 'pages', 4, 4),
+('Features', 'features', 5, 5),
+('User Accounts', 'users', 6, 6),
+('Content', 'content', 7, 7),
+('E-commerce', 'ecommerce', 8, 8),
+('Booking', 'booking', 9, 9),
+('Payment', 'payment', 10, 10),
+('Integrations', 'integrations', 11, 11),
+('SEO & Analytics', 'seo', 12, 12),
+('Security', 'security', 13, 13),
+('Multilingual', 'multilingual', 14, 14),
+('Technical', 'technical', 15, 15),
+('Budget & Timeline', 'budget', 16, 16),
+('Contact', 'contact', 17, 17);
+
+CREATE TABLE `questions` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `category_id` INT UNSIGNED NOT NULL,
+    `question` TEXT NOT NULL,
+    `description` TEXT,
+    `question_type` ENUM('text','textarea','number','email','phone','single_choice','multiple_choice','yes_no','url','date','file','range') NOT NULL DEFAULT 'text',
+    `field_name` VARCHAR(100) NOT NULL,
+    `is_required` TINYINT(1) DEFAULT 0,
+    `placeholder` VARCHAR(255),
+    `default_value` VARCHAR(255),
+    `min_value` INT,
+    `max_value` INT,
+    `display_order` INT DEFAULT 0,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `show_if_question_id` INT UNSIGNED NULL,
+    `show_if_value` VARCHAR(255),
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_field_name` (`field_name`),
+    FOREIGN KEY (`category_id`) REFERENCES `question_categories`(`id`),
+    FOREIGN KEY (`show_if_question_id`) REFERENCES `questions`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE `question_options` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `question_id` INT UNSIGNED NOT NULL,
+    `label` VARCHAR(255) NOT NULL,
+    `value` VARCHAR(255) NOT NULL,
+    `price_impact` DECIMAL(12,2) DEFAULT 0.00,
+    `feature_id` INT UNSIGNED,
+    `display_order` INT DEFAULT 0,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`feature_id`) REFERENCES `features`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- REQUIREMENTS (Customer Submissions)
+-- =====================================================
+
+CREATE TABLE `requirements` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` VARCHAR(30) NOT NULL UNIQUE,
+    `resume_token` VARCHAR(64) UNIQUE,
+    `status` ENUM('new','contacted','under_review','requirement_clarification','quotation_prepared','quotation_sent','negotiation','approved','rejected','on_hold','converted','completed','cancelled') DEFAULT 'new',
+    `website_type_id` INT UNSIGNED,
+    `website_type_other` VARCHAR(255),
+    `project_purpose` JSON,
+    `project_purpose_other` VARCHAR(255),
+    `project_name` VARCHAR(255),
+    `project_description` TEXT,
+    `existing_website` ENUM('no','keep','redesign','rebuild','not_sure') DEFAULT 'no',
+    `existing_website_url` VARCHAR(500),
+    `existing_website_problems` JSON,
+    `design_available` ENUM('yes','logo_only','references','no','need_design') DEFAULT 'need_design',
+    `design_style` JSON,
+    `design_style_other` VARCHAR(255),
+    `reference_urls` JSON,
+    `reference_notes` TEXT,
+    `has_logo` ENUM('yes','no','need_design') DEFAULT 'no',
+    `has_brand_colors` ENUM('yes','no','need_help') DEFAULT 'no',
+    `has_brand_guidelines` ENUM('yes','no') DEFAULT 'no',
+    `selected_pages` JSON,
+    `custom_pages` JSON,
+    `page_count` VARCHAR(20),
+    `content_provider` ENUM('customer','developer','both','copywriting') DEFAULT 'customer',
+    `content_requirements` JSON,
+    `needs_cms` ENUM('yes','no','not_sure') DEFAULT 'no',
+    `cms_manage_items` JSON,
+    `needs_user_accounts` ENUM('no','yes','not_sure') DEFAULT 'no',
+    `user_features` JSON,
+    `user_roles` JSON,
+    `user_roles_other` VARCHAR(255),
+    `needs_ecommerce` ENUM('no','yes','future') DEFAULT 'no',
+    `ecommerce_features` JSON,
+    `product_quantity` VARCHAR(20),
+    `needs_booking` ENUM('no','yes') DEFAULT 'no',
+    `booking_types` JSON,
+    `booking_features` JSON,
+    `needs_payment` ENUM('no','yes','future') DEFAULT 'no',
+    `payment_methods` JSON,
+    `payment_methods_other` VARCHAR(255),
+    `communication_features` JSON,
+    `search_type` ENUM('none','basic','advanced') DEFAULT 'none',
+    `search_filters` JSON,
+    `needs_maps` ENUM('no','yes') DEFAULT 'no',
+    `map_features` JSON,
+    `language_count` INT DEFAULT 1,
+    `languages` JSON,
+    `seo_level` ENUM('none','basic','standard','advanced') DEFAULT 'none',
+    `seo_features` JSON,
+    `analytics_features` JSON,
+    `security_features` JSON,
+    `hosting_domain` JSON,
+    `integrations` JSON,
+    `integrations_detail` JSON,
+    `special_requirements` TEXT,
+    `specific_workflow` TEXT,
+    `timeline` ENUM('no_deadline','1month','1_2months','2_3months','3_6months','6plus') DEFAULT 'no_deadline',
+    `launch_date` DATE,
+    `budget_range` VARCHAR(50),
+    `needs_maintenance` ENUM('no','yes','not_sure') DEFAULT 'no',
+    `maintenance_features` JSON,
+    `customer_name` VARCHAR(150) NOT NULL,
+    `customer_email` VARCHAR(150) NOT NULL,
+    `customer_phone` VARCHAR(30),
+    `customer_company` VARCHAR(150),
+    `customer_address` TEXT,
+    `customer_city` VARCHAR(100),
+    `customer_country` VARCHAR(100) DEFAULT 'Nepal',
+    `preferred_contact` ENUM('phone','email','whatsapp','viber','other') DEFAULT 'email',
+    `submitted_ip` VARCHAR(45),
+    `user_agent` TEXT,
+    `system_estimate` DECIMAL(12,2) DEFAULT 0.00,
+    `admin_override_price` DECIMAL(12,2),
+    `price_override_reason` TEXT,
+    `complexity_score` INT DEFAULT 0,
+    `complexity_level` ENUM('basic','moderate','advanced','complex') DEFAULT 'basic',
+    `estimate_confidence` ENUM('high','medium','low') DEFAULT 'high',
+    `assigned_to` INT UNSIGNED,
+    `submission_json` JSON,
+    `is_archived` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`website_type_id`) REFERENCES `website_types`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`assigned_to`) REFERENCES `admins`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE `requirement_answers` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `question_id` INT UNSIGNED NOT NULL,
+    `answer_value` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `requirement_features` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `feature_id` INT UNSIGNED NOT NULL,
+    `price` DECIMAL(12,2) DEFAULT 0.00,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`feature_id`) REFERENCES `features`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `requirement_files` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `file_type` VARCHAR(50),
+    `original_name` VARCHAR(255) NOT NULL,
+    `stored_name` VARCHAR(255) NOT NULL,
+    `file_size` INT UNSIGNED,
+    `mime_type` VARCHAR(100),
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- STATUS HISTORY
+-- =====================================================
+
+CREATE TABLE `requirement_status_history` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `old_status` VARCHAR(50),
+    `new_status` VARCHAR(50) NOT NULL,
+    `changed_by` INT UNSIGNED,
+    `notes` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `admins`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- ADMIN NOTES
+-- =====================================================
+
+CREATE TABLE `admin_notes` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `admin_id` INT UNSIGNED NOT NULL,
+    `note` TEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`admin_id`) REFERENCES `admins`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- QUOTATIONS
+-- =====================================================
+
+CREATE TABLE `quotations` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `quotation_number` VARCHAR(30) NOT NULL UNIQUE,
+    `requirement_id` INT UNSIGNED NOT NULL,
+    `admin_id` INT UNSIGNED NOT NULL,
+    `status` ENUM('draft','sent','accepted','rejected','expired') DEFAULT 'draft',
+    `project_name` VARCHAR(255),
+    `scope_description` TEXT,
+    `subtotal` DECIMAL(12,2) DEFAULT 0.00,
+    `discount_type` ENUM('none','fixed','percentage') DEFAULT 'none',
+    `discount_value` DECIMAL(12,2) DEFAULT 0.00,
+    `discount_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `tax_enabled` TINYINT(1) DEFAULT 0,
+    `tax_percentage` DECIMAL(5,2) DEFAULT 0.00,
+    `tax_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `total_amount` DECIMAL(12,2) DEFAULT 0.00,
+    `validity_days` INT DEFAULT 30,
+    `valid_until` DATE,
+    `terms_and_conditions` TEXT,
+    `notes` TEXT,
+    `internal_notes` TEXT,
+    `sent_at` TIMESTAMP NULL,
+    `responded_at` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`admin_id`) REFERENCES `admins`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE `quotation_items` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `quotation_id` INT UNSIGNED NOT NULL,
+    `feature_id` INT UNSIGNED,
+    `item_name` VARCHAR(255) NOT NULL,
+    `description` TEXT,
+    `quantity` INT DEFAULT 1,
+    `unit_price` DECIMAL(12,2) DEFAULT 0.00,
+    `total_price` DECIMAL(12,2) DEFAULT 0.00,
+    `display_order` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`quotation_id`) REFERENCES `quotations`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`feature_id`) REFERENCES `features`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE `quotation_status_history` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `quotation_id` INT UNSIGNED NOT NULL,
+    `old_status` VARCHAR(50),
+    `new_status` VARCHAR(50) NOT NULL,
+    `changed_by` INT UNSIGNED,
+    `notes` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`quotation_id`) REFERENCES `quotations`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `admins`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- EMAIL LOGS
+-- =====================================================
+
+CREATE TABLE `email_logs` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requirement_id` INT UNSIGNED,
+    `quotation_id` INT UNSIGNED,
+    `to_email` VARCHAR(150) NOT NULL,
+    `subject` VARCHAR(255) NOT NULL,
+    `body` TEXT,
+    `status` ENUM('queued','sent','failed') DEFAULT 'queued',
+    `error_message` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requirement_id`) REFERENCES `requirements`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`quotation_id`) REFERENCES `quotations`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- AUDIT LOGS
+-- =====================================================
+
+CREATE TABLE `audit_logs` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `admin_id` INT UNSIGNED,
+    `action` VARCHAR(100) NOT NULL,
+    `target_type` VARCHAR(50),
+    `target_id` INT UNSIGNED,
+    `details` JSON,
+    `ip_address` VARCHAR(45),
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`admin_id`) REFERENCES `admins`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =====================================================
+-- SETTINGS
+-- =====================================================
+
+CREATE TABLE `settings` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `setting_key` VARCHAR(100) NOT NULL UNIQUE,
+    `setting_value` TEXT,
+    `setting_type` ENUM('text','textarea','number','boolean','json','file') DEFAULT 'text',
+    `setting_group` VARCHAR(50) DEFAULT 'general',
+    `description` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_type`, `setting_group`, `description`) VALUES
+('company_name', 'WebDev Solutions', 'text', 'general', 'Company name'),
+('company_email', 'info@webdevsolutions.com', 'text', 'general', 'Company email'),
+('company_phone', '+977-1-4XXXXXX', 'text', 'general', 'Company phone'),
+('company_address', 'Kathmandu, Nepal', 'textarea', 'general', 'Company address'),
+('currency', 'NPR', 'text', 'pricing', 'Currency code'),
+('currency_symbol', 'NPR', 'text', 'pricing', 'Currency symbol'),
+('tax_enabled', '0', 'boolean', 'pricing', 'Enable tax'),
+('tax_percentage', '13', 'number', 'pricing', 'Tax percentage'),
+('quotation_validity_days', '30', 'number', 'pricing', 'Quotation validity in days'),
+('price_display_mode', 'both', 'text', 'pricing', 'exact, range, or both'),
+('smtp_host', '', 'text', 'email', 'SMTP host'),
+('smtp_port', '587', 'number', 'email', 'SMTP port'),
+('smtp_username', '', 'text', 'email', 'SMTP username'),
+('smtp_password', '', 'text', 'email', 'SMTP password'),
+('smtp_encryption', 'tls', 'text', 'email', 'SMTP encryption'),
+('from_email', '', 'text', 'email', 'From email address'),
+('from_name', 'WebCraft Studio', 'text', 'email', 'From name'),
+('max_upload_size', '10', 'number', 'general', 'Max upload size in MB'),
+('requirement_prefix', 'REQ', 'text', 'general', 'Requirement ID prefix'),
+('quotation_prefix', 'QUO', 'text', 'general', 'Quotation number prefix'),
+('maintenance_mode', '0', 'boolean', 'general', 'Maintenance mode');
+
+-- =====================================================
+-- INDEXES
+-- =====================================================
+
+CREATE INDEX `idx_requirements_status` ON `requirements`(`status`);
+CREATE INDEX `idx_requirements_created` ON `requirements`(`created_at`);
+CREATE INDEX `idx_requirements_type` ON `requirements`(`website_type_id`);
+CREATE INDEX `idx_requirements_customer_email` ON `requirements`(`customer_email`);
+CREATE INDEX `idx_requirements_archived` ON `requirements`(`is_archived`);
+CREATE INDEX `idx_quotations_status` ON `quotations`(`status`);
+CREATE INDEX `idx_quotations_requirement` ON `quotations`(`requirement_id`);
+CREATE INDEX `idx_audit_admin` ON `audit_logs`(`admin_id`);
+CREATE INDEX `idx_audit_created` ON `audit_logs`(`created_at`);

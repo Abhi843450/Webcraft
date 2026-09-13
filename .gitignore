@@ -1,0 +1,7 @@
+assets/uploads/*
+!assets/uploads/.gitkeep
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
