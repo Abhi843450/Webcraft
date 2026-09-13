@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: webcraft
+    runtime: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: webcraft-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: webcraft-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: webcraft-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: webcraft-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: webcraft-db
+          property: password
+
+databases:
+  - name: webcraft-db
+    plan: free
+    databaseName: webcraft_studio
