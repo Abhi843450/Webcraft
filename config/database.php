@@ -16,21 +16,30 @@ class Database {
             if ($host) {
                 $port = $port ?: '5432';
                 $dsn = "pgsql:host={$host};port={$port};dbname={$name}";
+                $this->pdo = new PDO(
+                    $dsn,
+                    $user,
+                    $pass,
+                    [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false,
+                        PDO::PGSQL_ATTR_SSLMODE => PDO::PGSQL_SSLMODE_REQUIRE
+                    ]
+                );
             } else {
-                $port = '3306';
                 $dsn = "mysql:host=localhost;port=3306;dbname=website_requirement_builder;charset=utf8mb4";
+                $this->pdo = new PDO(
+                    $dsn,
+                    $user,
+                    $pass,
+                    [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES => false
+                    ]
+                );
             }
-
-            $this->pdo = new PDO(
-                $dsn,
-                $user,
-                $pass,
-                [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
-                ]
-            );
         } catch (PDOException $e) {
             die('Database connection failed: ' . $e->getMessage());
         }
