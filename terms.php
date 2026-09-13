@@ -69,13 +69,6 @@
 
         <h2>8. Governing Law</h2>
         <p>These terms are governed by the laws of Nepal. Any disputes shall be resolved in the courts of Kathmandu, Nepal.</p>
-
-        <h2>9. Contact</h2>
-        <p>For questions about these Terms of Service:</p>
-        <p>
-            <strong>Email:</strong> info@webcraftstudio.com<br>
-            <strong>Location:</strong> Kathmandu, Nepal
-        </p>
     </div>
 </div>
 

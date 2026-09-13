@@ -68,12 +68,8 @@
             <li>Opt out of any marketing communications.</li>
         </ul>
 
-        <h2>8. Contact Us</h2>
-        <p>If you have questions about this Privacy Policy, please contact us at:</p>
-        <p>
-            <strong>Email:</strong> info@webcraftstudio.com<br>
-            <strong>Location:</strong> Kathmandu, Nepal
-        </p>
+        <h2>8. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date.</p>
     </div>
 </div>
 

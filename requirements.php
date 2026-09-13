@@ -316,7 +316,8 @@ textarea.form-control{resize:vertical;min-height:80px;}
 .price-close-btn:hover{color:var(--text);}
 .site-footer{background:#0f172a;color:#94a3b8;text-align:center;padding:8px 12px;font-size:11px;line-height:1.3;margin-top:auto;flex:0 0 auto;}
 .site-footer strong{color:#e2e8f0;}
-@media(max-width:991px){.floating-price-toggle{display:flex;flex-direction:column;gap:0;}.price-sidebar{display:block;position:fixed;top:0;left:0;bottom:0;right:auto;width:85%;max-width:360px;z-index:1001;padding:0;background:var(--surface);box-shadow:4px 0 24px rgba(0,0,0,.2);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;}.price-sidebar.mobile-show{transform:translateX(0);}.price-sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;opacity:0;transition:opacity .3s ease;}.price-sidebar-overlay.active{display:block;opacity:1;}.price-sidebar .price-card{border:none;border-radius:0;min-height:100vh;}.price-sidebar .price-card-header{border-radius:0;padding:16px 18px;position:sticky;top:0;z-index:1;}.price-sidebar .price-card-body{padding:20px 18px;}.step-label{display:none;}.step-item{width:auto;}.step-indicators{gap:4px;}.step-indicators::before{left:10px;right:10px;}.step-progress-fill{left:10px;}.site-footer{font-size:10px;padding:6px 8px;}}
+@media(max-width:991px){.floating-price-toggle{display:flex;flex-direction:column;gap:0;width:50px;height:50px;bottom:16px;right:16px;}.floating-price-toggle .price-icon{font-size:18px;}.floating-price-toggle .price-text{font-size:9px;}.price-sidebar{display:block;position:fixed;top:0;left:0;bottom:0;right:auto;width:85%;max-width:360px;z-index:1001;padding:0;background:var(--surface);box-shadow:4px 0 24px rgba(0,0,0,.2);transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;}.price-sidebar.mobile-show{transform:translateX(0);}.price-sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;opacity:0;transition:opacity .3s ease;}.price-sidebar-overlay.active{display:block;opacity:1;}.price-sidebar .price-card{border:none;border-radius:0;min-height:100vh;}.price-sidebar .price-card-header{border-radius:0;padding:16px 18px;position:sticky;top:0;z-index:1;}.price-sidebar .price-card-body{padding:20px 18px;}.step-label{display:none;}.step-item{width:auto;}.step-indicators{gap:4px;}.step-indicators::before{left:10px;right:10px;}.step-progress-fill{left:10px;}.site-footer{font-size:10px;padding:6px 8px;}.btn-nav{padding:8px 16px;font-size:13px;}.btn-next::after,.btn-submit::after{content:'';position:absolute;inset:-6px;}}
+@media(max-width:576px){.floating-price-toggle{width:46px;height:46px;bottom:12px;right:12px;font-size:12px;}.floating-price-toggle .price-icon{font-size:16px;}.floating-price-toggle .price-text{font-size:8px;}.btn-nav{padding:7px 14px;font-size:12px;gap:4px;}.top-bar .brand{font-size:13px !important;}.step-dots .step-dot{width:8px;height:8px;}.step-dots{gap:6px;}}
 </style>
 </head>
 <body>
@@ -2016,11 +2017,10 @@ function autoSave() {
         const data = {};
         new FormData(form).forEach((v, k) => {
             if (k.endsWith('[]')) {
-                const key = k.slice(0, -2);
-                if (!data[key]) data[key] = [];
-                data[key].push(v);
+                if (!data[k]) data[k] = [];
+                data[k].push(v);
             } else {
-                data[key] = v;
+                data[k] = v;
             }
         });
         const checked = {};
