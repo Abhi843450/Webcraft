@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS admins (
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     avatar VARCHAR(255),
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     last_login TIMESTAMP,
     login_attempts INTEGER DEFAULT 0,
     locked_until TIMESTAMP,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS website_types (
     icon VARCHAR(50),
     base_price DECIMAL(12,2) DEFAULT 0.00,
     display_order INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS feature_categories (
     slug VARCHAR(100) NOT NULL UNIQUE,
     icon VARCHAR(50),
     display_order INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS features (
     description TEXT,
     price DECIMAL(12,2) DEFAULT 0.00,
     pricing_type VARCHAR(20) DEFAULT 'fixed' CHECK (pricing_type IN ('fixed','per_page','per_product','per_language','per_user_role','percentage','custom')),
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     display_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS pricing_rules (
     max_amount DECIMAL(12,2) DEFAULT 0.00,
     condition_key VARCHAR(100),
     condition_value VARCHAR(255),
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS question_categories (
     icon VARCHAR(50),
     description TEXT,
     display_order INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -274,13 +274,13 @@ CREATE TABLE IF NOT EXISTS questions (
     description TEXT,
     question_type VARCHAR(20) NOT NULL DEFAULT 'text' CHECK (question_type IN ('text','textarea','number','email','phone','single_choice','multiple_choice','yes_no','url','date','file','range')),
     field_name VARCHAR(100) NOT NULL,
-    is_required BOOLEAN DEFAULT FALSE,
+    is_required INTEGER DEFAULT 0,
     placeholder VARCHAR(255),
     default_value VARCHAR(255),
     min_value INTEGER,
     max_value INTEGER,
     display_order INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     show_if_question_id INTEGER REFERENCES questions(id) ON DELETE SET NULL,
     show_if_value VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -296,7 +296,7 @@ CREATE TABLE IF NOT EXISTS question_options (
     price_impact DECIMAL(12,2) DEFAULT 0.00,
     feature_id INTEGER REFERENCES features(id) ON DELETE SET NULL,
     display_order INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -385,7 +385,7 @@ CREATE TABLE IF NOT EXISTS requirements (
     estimate_confidence VARCHAR(10) DEFAULT 'high' CHECK (estimate_confidence IN ('high','medium','low')),
     assigned_to INTEGER REFERENCES admins(id) ON DELETE SET NULL,
     submission_json JSONB,
-    is_archived BOOLEAN DEFAULT FALSE,
+    is_archived INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -460,7 +460,7 @@ CREATE TABLE IF NOT EXISTS quotations (
     discount_type VARCHAR(10) DEFAULT 'none' CHECK (discount_type IN ('none','fixed','percentage')),
     discount_value DECIMAL(12,2) DEFAULT 0.00,
     discount_amount DECIMAL(12,2) DEFAULT 0.00,
-    tax_enabled BOOLEAN DEFAULT FALSE,
+    tax_enabled INTEGER DEFAULT 0,
     tax_percentage DECIMAL(5,2) DEFAULT 0.00,
     tax_amount DECIMAL(12,2) DEFAULT 0.00,
     total_amount DECIMAL(12,2) DEFAULT 0.00,
@@ -537,7 +537,7 @@ CREATE TABLE IF NOT EXISTS settings (
     id SERIAL PRIMARY KEY,
     setting_key VARCHAR(100) NOT NULL UNIQUE,
     setting_value TEXT,
-    setting_type VARCHAR(10) DEFAULT 'text' CHECK (setting_type IN ('text','textarea','number','boolean','json','file')),
+    setting_type VARCHAR(10) DEFAULT 'text' CHECK (setting_type IN ('text','textarea','number','INTEGER','json','file')),
     setting_group VARCHAR(50) DEFAULT 'general',
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -551,7 +551,7 @@ INSERT INTO settings (setting_key, setting_value, setting_type, setting_group, d
 ('company_address', 'Kathmandu, Nepal', 'textarea', 'general', 'Company address'),
 ('currency', 'NPR', 'text', 'pricing', 'Currency code'),
 ('currency_symbol', 'NPR', 'text', 'pricing', 'Currency symbol'),
-('tax_enabled', '0', 'boolean', 'pricing', 'Enable tax'),
+('tax_enabled', '0', 'INTEGER', 'pricing', 'Enable tax'),
 ('tax_percentage', '13', 'number', 'pricing', 'Tax percentage'),
 ('quotation_validity_days', '30', 'number', 'pricing', 'Quotation validity in days'),
 ('price_display_mode', 'both', 'text', 'pricing', 'exact, range, or both'),
@@ -565,7 +565,7 @@ INSERT INTO settings (setting_key, setting_value, setting_type, setting_group, d
 ('max_upload_size', '10', 'number', 'general', 'Max upload size in MB'),
 ('requirement_prefix', 'REQ', 'text', 'general', 'Requirement ID prefix'),
 ('quotation_prefix', 'QUO', 'text', 'general', 'Quotation number prefix'),
-('maintenance_mode', '0', 'boolean', 'general', 'Maintenance mode')
+('maintenance_mode', '0', 'INTEGER', 'general', 'Maintenance mode')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- =====================================================
