@@ -15,7 +15,7 @@ class Database {
 
             if ($host) {
                 $port = $port ?: '5432';
-                $dsn = "pgsql:host={$host};port={$port};dbname={$name};sslmode=require";
+                $dsn = "pgsql:host={$host};port={$port};dbname={$name}";
                 $this->pdo = new PDO(
                     $dsn,
                     $user,
