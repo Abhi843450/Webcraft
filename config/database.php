@@ -7,15 +7,22 @@ class Database {
 
     private function __construct() {
         try {
-            // Production (Render) uses env vars, local uses defaults
-            $host = getenv('DB_HOST') ?: 'localhost';
-            $port = getenv('DB_PORT') ?: '3306';
+            $host = getenv('DB_HOST') ?: null;
+            $port = getenv('DB_PORT');
             $name = getenv('DB_NAME') ?: 'website_requirement_builder';
             $user = getenv('DB_USER') ?: 'root';
             $pass = getenv('DB_PASS') ?: '';
 
+            if ($host) {
+                $port = $port ?: '5432';
+                $dsn = "pgsql:host={$host};port={$port};dbname={$name}";
+            } else {
+                $port = '3306';
+                $dsn = "mysql:host=localhost;port=3306;dbname=website_requirement_builder;charset=utf8mb4";
+            }
+
             $this->pdo = new PDO(
-                "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+                $dsn,
                 $user,
                 $pass,
                 [
@@ -59,6 +66,9 @@ class Database {
         $placeholders = implode(', ', array_fill(0, count($data), '?'));
         $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
         $this->query($sql, array_values($data));
+        if (getenv('DB_HOST')) {
+            return $this->fetch("SELECT currval(pg_get_serial_sequence('{$table}', 'id')) as id")['id'] ?? null;
+        }
         return $this->pdo->lastInsertId();
     }
 
