@@ -1965,11 +1965,20 @@ document.getElementById('requirementForm').addEventListener('submit', function(e
                         </div>
                         <h2 class="fw-bold mb-2">Requirements Submitted!</h2>
                         <p class="text-muted mb-1">Your requirement ID: <strong>${data.requirement_id || 'N/A'}</strong></p>
-                        <p class="text-muted mb-4">Our team will review your requirements and send you a detailed quotation soon.</p>
-                        <a href="<?= BASE_URL ?>/" class="btn btn-primary px-4 py-2">Back to Home</a>
+                        <p class="text-muted mb-4">Redirecting to home in <span id="countdown">5</span>s...</p>
                     </div>
                 </div>
             `;
+            let count = 5;
+            const el = document.getElementById('countdown');
+            const timer = setInterval(() => {
+                count--;
+                if (el) el.textContent = count;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    window.location.href = '<?= BASE_URL ?>/';
+                }
+            }, 1000);
         } else {
             alert(data.message || 'Submission failed. Please try again.');
             btn.disabled = false;
