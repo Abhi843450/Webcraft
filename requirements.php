@@ -2078,6 +2078,11 @@ function startAgain() {
 
 document.getElementById('requirementForm').addEventListener('input', autoSave);
 document.getElementById('requirementForm').addEventListener('change', autoSave);
+document.getElementById('requirementForm').addEventListener('click', function(e) {
+    if (e.target.closest('.card-option') || e.target.closest('label') || e.target.closest('.form-check')) {
+        autoSave();
+    }
+});
 
 // === KEEP-ALIVE PING ===
 setInterval(() => {
@@ -2086,7 +2091,8 @@ setInterval(() => {
 
 document.addEventListener('DOMContentLoaded', function() {
     handleConditionalSections();
-    restoreAutoSave();
+    var restored = restoreAutoSave();
+    if (!restored) hideAutoSaveIndicator();
 });
 </script>
 </body>
